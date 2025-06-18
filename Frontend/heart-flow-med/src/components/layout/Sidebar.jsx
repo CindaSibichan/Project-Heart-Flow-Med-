@@ -1,193 +1,135 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  LayoutDashboard,
-  User,
+  Home,
+  Users,
   Calendar,
   FileText,
-  Users,
   Settings,
-  LogOut,
-  Menu,
-  X,
+  Heart,
   Stethoscope,
+  UserPlus,
   ClipboardList,
-  Building2,
-  HeartPulse
+  Activity,
 } from 'lucide-react';
 
 const Sidebar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { user, logout } = useAuth();
   const location = useLocation();
+  const { user } = useAuth();
 
-  const getNavigationItems = () => {
+  const getNavigationItems = (role) => {
     const commonItems = [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { name: 'Profile', href: '/profile', icon: User },
+      { name: 'Dashboard', href: '/dashboard', icon: Home },
+      { name: 'Profile', href: '/profile', icon: UserPlus },
+      { name: 'Settings', href: '/settings', icon: Settings },
     ];
 
-    switch (user?.role) {
-      case 'Cardiologist':
-        return [
-          ...commonItems,
-          { name: 'Appointments', href: '/appointments', icon: Calendar },
-          { name: 'Medical Records', href: '/medical-records', icon: FileText },
-          { name: 'Patients', href: '/patients', icon: Users },
-        ];
-      case 'Nurse':
-        return [
-          ...commonItems,
-          { name: 'Appointments', href: '/appointments', icon: Calendar },
-          { name: 'Medical Records', href: '/medical-records', icon: FileText },
-          { name: 'Patients', href: '/patients', icon: Users },
-        ];
-      case 'Patient':
-        return [
-          ...commonItems,
-          { name: 'Appointments', href: '/appointments', icon: Calendar },
-          { name: 'Medical History', href: '/medical-history', icon: HeartPulse },
-        ];
-      case 'Administrative Staff':
-        return [
-          ...commonItems,
-          { name: 'Appointments', href: '/appointments', icon: Calendar },
-          { name: 'Users', href: '/users', icon: Users },
-          { name: 'Medical Records', href: '/medical-records', icon: FileText },
-        ];
+    switch (role) {
       case 'Admin':
         return [
           ...commonItems,
           { name: 'Users', href: '/users', icon: Users },
           { name: 'Appointments', href: '/appointments', icon: Calendar },
-          { name: 'Medical Records', href: '/medical-records', icon: FileText },
-          { name: 'Settings', href: '/settings', icon: Settings },
+          { name: 'Medical Records', href: '/records', icon: FileText },
+          { name: 'Doctors', href: '/doctors', icon: Stethoscope },
+          { name: 'Nurses', href: '/nurses', icon: UserPlus },
+        ];
+      case 'Cardiologist':
+        return [
+          ...commonItems,
+          { name: 'My Patients', href: '/my-patients', icon: Users },
+          { name: 'Appointments', href: '/appointments', icon: Calendar },
+          { name: 'Medical Records', href: '/records', icon: FileText },
+          { name: 'Diagnostics', href: '/diagnostics', icon: Activity },
+        ];
+      case 'Nurse':
+        return [
+          ...commonItems,
+          { name: 'Patients', href: '/patients', icon: Users },
+          { name: 'Appointments', href: '/appointments', icon: Calendar },
+          { name: 'Vitals', href: '/vitals', icon: Activity },
+          { name: 'Medical Records', href: '/records', icon: FileText },
+        ];
+      case 'Patient':
+        return [
+          ...commonItems,
+          { name: 'My Appointments', href: '/my-appointments', icon: Calendar },
+          { name: 'Medical History', href: '/medical-history', icon: FileText },
+          { name: 'Test Results', href: '/test-results', icon: ClipboardList },
+        ];
+      case 'Admin Staff':
+        return [
+          ...commonItems,
+          { name: 'Appointments', href: '/appointments', icon: Calendar },
+          { name: 'Medical Records', href: '/records', icon: FileText },
+          { name: 'Billing', href: '/billing', icon: FileText },
         ];
       default:
         return commonItems;
     }
   };
 
-  const navigationItems = getNavigationItems();
+  const navigation = getNavigationItems(user?.role);
 
   return (
-    <>
-      {/* Mobile menu button */}
-      <button
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        {isOpen ? (
-          <X className="h-6 w-6" />
-        ) : (
-          <Menu className="h-6 w-6" />
-        )}
-      </button>
-
-      {/* Sidebar for mobile */}
-      <div
-        className={`lg:hidden fixed inset-0 z-40 ${
-          isOpen ? 'block' : 'hidden'
-        }`}
-      >
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setIsOpen(false)} />
-        <div className="fixed inset-y-0 left-0 flex flex-col w-64 bg-white">
+    <div className="hidden md:flex md:flex-shrink-0">
+      <div className="flex flex-col w-64">
+        <div className="flex flex-col h-0 flex-1 bg-gray-800">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
-              <h1 className="text-xl font-bold text-blue-600">Heart Flow Med</h1>
+              <Heart className="h-8 w-8 text-white" />
+              <span className="ml-2 text-xl font-semibold text-white">
+                Heart Flow Med
+              </span>
             </div>
             <nav className="mt-5 flex-1 px-2 space-y-1">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                    location.pathname === item.href
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <item.icon
-                    className={`mr-3 h-5 w-5 ${
-                      location.pathname === item.href
-                        ? 'text-blue-600'
-                        : 'text-gray-400 group-hover:text-gray-500'
-                    }`}
-                  />
-                  {item.name}
-                </Link>
-              ))}
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`${
+                      isActive
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    } group flex items-center px-2 py-2 text-sm font-medium rounded-md`}
+                  >
+                    <item.icon
+                      className={`${
+                        isActive
+                          ? 'text-gray-300'
+                          : 'text-gray-400 group-hover:text-gray-300'
+                      } mr-3 flex-shrink-0 h-6 w-6`}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
             </nav>
           </div>
-          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <button
-              onClick={logout}
-              className="flex-shrink-0 w-full group block"
-            >
+          <div className="flex-shrink-0 flex border-t border-gray-700 p-4">
+            <div className="flex-shrink-0 w-full group block">
               <div className="flex items-center">
                 <div>
-                  <LogOut className="h-6 w-6 text-gray-400 group-hover:text-gray-500" />
+                  <div className="h-9 w-9 rounded-full bg-gray-700 flex items-center justify-center">
+                    <UserPlus className="h-5 w-5 text-white" />
+                  </div>
                 </div>
                 <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                    Logout
+                  <p className="text-sm font-medium text-white">
+                    {user?.first_name} {user?.last_name}
+                  </p>
+                  <p className="text-xs font-medium text-gray-300 capitalize">
+                    {user?.role?.replace('_', ' ')}
                   </p>
                 </div>
               </div>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Static sidebar for desktop */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white pt-5 pb-4 overflow-y-auto">
-          <div className="flex items-center flex-shrink-0 px-4">
-            <h1 className="text-xl font-bold text-blue-600">Heart Flow Med</h1>
-          </div>
-          <nav className="mt-5 flex-1 px-2 space-y-1">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
-                  location.pathname === item.href
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`}
-              >
-                <item.icon
-                  className={`mr-3 h-5 w-5 ${
-                    location.pathname === item.href
-                      ? 'text-blue-600'
-                      : 'text-gray-400 group-hover:text-gray-500'
-                  }`}
-                />
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-          <button
-            onClick={logout}
-            className="flex-shrink-0 w-full group block"
-          >
-            <div className="flex items-center">
-              <div>
-                <LogOut className="h-6 w-6 text-gray-400 group-hover:text-gray-500" />
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                  Logout
-                </p>
-              </div>
             </div>
-          </button>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
