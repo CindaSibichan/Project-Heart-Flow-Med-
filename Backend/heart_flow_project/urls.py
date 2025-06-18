@@ -20,4 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('heart_flow_app.urls')),
+    path('api/',include('patient_app.urls')),
 ]

@@ -1,8 +1,44 @@
 import { Bell, Search, User, LogOut, Settings } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import useUserProfile from '../../hooks/useUserProfile';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const { profile, loading, error } = useUserProfile();
+
+  const getRoleSpecificInfo = () => {
+    if (!profile) return null;
+
+    switch (profile.role) {
+      case 'Cardiologist':
+        return (
+          <div className="text-xs text-gray-500">
+            {profile.specialization} • {profile.experience} years
+          </div>
+        );
+      case 'Nurse':
+        return (
+          <div className="text-xs text-gray-500">
+            {profile.department}
+          </div>
+        );
+      case 'Administrative Staff':
+        return (
+          <div className="text-xs text-gray-500">
+            {profile.office_location}
+          </div>
+        );
+      case 'Patient':
+        return (
+          <div className="text-xs text-gray-500">
+            ID: {profile.unique_id}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -33,23 +69,27 @@ const Header = () => {
             {/* User Menu */}
             <div className="relative">
               <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
+                <Link to="/profile" className="flex-shrink-0">
                   <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
                     <User className="h-5 w-5 text-white" />
                   </div>
-                </div>
-                <div className="hidden md:block">
+                </Link>
+                <Link to="/profile" className="hidden md:block">
                   <div className="text-sm font-medium text-gray-900">
-                    {user?.first_name} {user?.last_name}
+                    {profile?.first_name || user?.first_name} {profile?.last_name || user?.last_name}
                   </div>
-                  <div className="text-xs text-gray-500 capitalize">
-                    {user?.role?.replace('_', ' ')}
-                  </div>
-                </div>
+                  {loading ? (
+                    <div className="text-xs text-gray-500">Loading...</div>
+                  ) : error ? (
+                    <div className="text-xs text-red-500">{error}</div>
+                  ) : (
+                    getRoleSpecificInfo()
+                  )}
+                </Link>
                 <div className="flex items-center space-x-2">
-                  <button className="p-1 text-gray-400 hover:text-gray-600">
+                  <Link to="/profile" className="p-1 text-gray-400 hover:text-gray-600">
                     <Settings className="h-5 w-5" />
-                  </button>
+                  </Link>
                   <button
                     onClick={logout}
                     className="p-1 text-gray-400 hover:text-red-600"

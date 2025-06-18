@@ -30,7 +30,7 @@ class PatientRegistrationSerializer(serializers.ModelSerializer):
             'emergency_contact': validated_data.pop('emergency_contact'),
             'insurance_provider': validated_data.pop('insurance_provider', ''),
             'insurance_id': validated_data.pop('insurance_id', ''),
-            'country': validated_data.pop('country'),
+            'country': validated_data.pop('country',''),
         }
 
         # Create user with role 'Patient'

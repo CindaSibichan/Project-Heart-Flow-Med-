@@ -2,72 +2,60 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { LockClosedIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
+import axiosInstance from '../../config/axiosInstance';
+import TokenService from '../../config/tokenService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showOTPModal, setShowOTPModal] = useState(false);
-  const [otp, setOtp] = useState('');
+  const [loginData, setLoginData] = useState(null);
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  // Mock API call for login - replace with your actual API endpoint
-  const loginUser = async (email, password) => {
-    // This would be your actual API call
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
-    
-    if (!response.ok) {
-      throw new Error('Login failed');
+  const loginUser = async () => {
+    try {
+      const res = await axiosInstance.post('/user-login/', { email, password });
+      return res.data;
+    } catch (error) {
+      throw error;
     }
-    
-    return response.json();
   };
 
-  // Mock API call for OTP verification - replace with your actual API endpoint
-  const verifyOTP = async (email, otp) => {
-    // This would be your actual API call
-    const response = await fetch('/api/auth/verify-otp', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, otp }),
-    });
-    
-    if (!response.ok) {
-      throw new Error('OTP verification failed');
+  const verifyOtp = async () => {
+    try {
+      const res = await axiosInstance.post('/verify-otp/', { email, otp });
+      return res.data;
+    } catch (error) {
+      throw error;
     }
-    
-    return response.json();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
     try {
-      // Step 1: Send login request
-      const response = await loginUser(email, password);
+      const data = await loginUser();
+      console.log('Login response:', data); // Debug log
       
-      // If login is successful but requires OTP
-      if (response.requiresOTP) {
+      // Check if OTP is required based on the response message
+      if (data.status && data.message === 'OTP sent to your email') {
+        setLoginData(data);
         setShowOTPModal(true);
       } else {
-        // If no OTP required, proceed to dashboard
-        login(response.data);
+        // If no OTP required, store credentials and navigate
+        storeCredentials(data);
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
+      console.error('Login error:', err); // Debug log
+      const errorMessage = err.response?.data?.detail || err.response?.data?.message || 'Login failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -77,24 +65,64 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
     try {
-      // Step 2: Verify OTP
-      const response = await verifyOTP(email, otp);
+      const data = await verifyOtp();
+      console.log('OTP verification response:', data); // Debug log
       
-      // If OTP is valid, proceed to dashboard
-      login(response.data);
-      navigate('/dashboard');
+      if (data.status && data.data) {
+        // Store credentials from OTP verification response
+        TokenService.setToken(data.data.access);
+        TokenService.setRefreshToken(data.data.refresh);
+        TokenService.setUserRole(data.data.role);
+        TokenService.setUserId(data.data.user_id);
+        TokenService.setUserName(data.data.email);
+
+        // Update auth context with role information
+        login({
+          id: data.data.user_id,
+          role: data.data.role,
+          name: data.data.email,
+          token: data.data.access
+        });
+
+        setShowOTPModal(false);
+        // Navigate to dashboard - the RoleBasedDashboard component will handle the correct dashboard
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setError(err.message || 'Invalid OTP. Please try again.');
+      console.error('OTP verification error:', err); // Debug log
+      const errorMessage = err.response?.data?.detail || err.response?.data?.message || 'Invalid OTP. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleResendOTP = async () => {
+    setError('');
+    setIsLoading(true);
+    try {
+      await loginUser(); // This will trigger a new OTP
+      setError('A new OTP has been sent to your email.');
+    } catch (err) {
+      const errorMessage = err.response?.data?.detail || err.response?.data?.message || 'Failed to resend OTP. Please try again.';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const storeCredentials = (data) => {
+    if (data.access) TokenService.setToken(data.access);
+    if (data.refresh) TokenService.setRefreshToken(data.refresh);
+    if (data.role) TokenService.setUserRole(data.role);
+    if (data.user_id) TokenService.setUserId(data.user_id);
+    if (data.email) TokenService.setUserName(data.email);
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-2xl">
+    <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 overflow-y-auto">
+      <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-2xl my-8">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center">
             <LockClosedIcon className="h-8 w-8 text-blue-600" />
@@ -219,8 +247,8 @@ const Login = () => {
 
       {/* OTP Verification Modal */}
       {showOTPModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full my-8">
             <div className="text-center">
               <div className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                 <LockClosedIcon className="h-8 w-8 text-blue-600" />
@@ -273,6 +301,7 @@ const Login = () => {
                   onClick={() => {
                     setShowOTPModal(false);
                     setError('');
+                    setOtp('');
                   }}
                   className="text-sm font-medium text-gray-600 hover:text-gray-500"
                 >
@@ -290,8 +319,12 @@ const Login = () => {
 
             <div className="mt-4 text-center text-sm text-gray-600">
               Didn't receive a code?{' '}
-              <button className="font-medium text-blue-600 hover:text-blue-500">
-                Resend code
+              <button 
+                onClick={handleResendOTP}
+                disabled={isLoading}
+                className="font-medium text-blue-600 hover:text-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? 'Sending...' : 'Resend code'}
               </button>
             </div>
           </div>

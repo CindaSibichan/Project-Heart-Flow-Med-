@@ -33,6 +33,14 @@ ALLOWED_HOSTS = []
 AUTH_USER_MODEL = 'heart_flow_app.ProfileUser'
 # Application definition
 
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  # Your Vite/React dev server
+]
+
+CORS_ALLOW_ALL_ORIGINS = True
+
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -41,10 +49,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'heart_flow_app',
-    'patient_app'
+    'patient_app',
+     'corsheaders',
 ]
 
 MIDDLEWARE = [
+     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -55,6 +65,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'heart_flow_project.urls'
+
+
 
 TEMPLATES = [
     {
@@ -142,8 +154,8 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=4),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",

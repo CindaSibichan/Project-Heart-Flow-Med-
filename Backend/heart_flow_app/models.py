@@ -10,7 +10,7 @@ class ProfileUser(AbstractUser):
         ('Cardiologist', 'Cardiologist'),
         ('Nurse', 'Nurse'),
         ('Sonographer', 'Sonographer'),
-        ('Admin Staff', 'Admin Staff'),
+        ('Administrative Staff', 'Administrative Staff'),
         ('Patient', 'Patient'),
         ('Group Manager', 'Group Manager'),
         ('IT Staff', 'IT Staff'),
@@ -27,6 +27,14 @@ class ProfileUser(AbstractUser):
 
     objects = CustomUserManager()
 
+
+    def get_full_name(self):
+        """
+        Returns the first_name plus the last_name, with a space in between.
+        """
+        full_name = f"{self.first_name} {self.last_name}"
+        return full_name.strip()
+
     def __str__(self):
         return self.email
 
@@ -40,6 +48,7 @@ class PatientProfile(models.Model):
     insurance_provider = models.CharField(max_length=100, blank=True, null=True)
     insurance_id = models.CharField(max_length=50, blank=True, null=True)
     country = models.CharField(max_length=55)
+    unique_id = models.CharField(max_length=20 ,unique=True,null=True ,blank=True)
 
     def __str__(self):
         return f"{self.user.first_name}-{self.user.last_name}"
@@ -60,6 +69,29 @@ class DoctorProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.first_name}-{self.user.last_name}"
+    
+
+class NurseProfile(models.Model):
+    user = models.OneToOneField(ProfileUser, on_delete=models.CASCADE, limit_choices_to={'role': 'Nurse'})
+    department = models.CharField(max_length=100)
+    shift = models.CharField(max_length=50)
+
+    def __str__(self):
+        return f"{self.user.first_name}-{self.user.last_name}"
+
+class SonographerProfile(models.Model):
+    user = models.OneToOneField(ProfileUser, on_delete=models.CASCADE, limit_choices_to={'role': 'Sonographer'})
+    certification = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.user.first_name}-{self.user.last_name}"
+
+class AdministrativeStaffProfile(models.Model):
+    user = models.OneToOneField(ProfileUser, on_delete=models.CASCADE, limit_choices_to={'role': 'Administrative Staff'})
+    office_location = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.user.first_name}-{self.user.last_name}"     
     
 class Appointment(models.Model):
     patient = models.ForeignKey(ProfileUser, on_delete=models.CASCADE, related_name='patients', limit_choices_to={'role': 'Patient'})
